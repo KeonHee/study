@@ -4,12 +4,12 @@
 
 ## 기본 구성 요소와 동작
 Kafka는 Publish-Subscribe 모델을 기반으로 동작하며 producer, consumer, broker, connector, stream processer로 구성된다.
-![](assets/kafka-cd862.png)
+![](assets/kafka-c2f96.png)
 
 Kafka의 broker는 topic을 기준으로 메시지를 관리한다. Producer는 특정 topic의 메시지를 생성한 뒤 해당 메시지를 broker에 전달한다. Broker가 전달받은 메시지를 topic별로 분류하여 쌓아놓으면, 해당 topic을 구독하는 consumer들이 메시지를 가져가서 처리하게 된다. 이 때 메시지는 key, value, timestamp로 구성되어 있다.
 
 Kafka는 Sale-Out과 High Availability를 위해서 broker들이 클러스터로 동작하게 되어있다. 심지어 한개의 broker만 있어도 클러스터로 동작한다. 클러스터 내의 broker에 대한 분산 처리는 아래의 그림과 같이 Apache ZooKeeper가 담당한다.
-![](assets/kafka-b8b2a.png)
+![](assets/kafka-fa3e6.png)
 
 > 한개일 떄는 어떻게 동작하지?
 
@@ -43,26 +43,26 @@ Kafka는 Sale-Out과 High Availability를 위해서 broker들이 클러스터로
 
 ## 기존 메시징 시스템과의 성능 비교
 Producer 성능
-![](assets/kafka-9a2c6.png)
+![](assets/kafka-07f49.png)
 빨간색 그래프는 한 번에 50개씩 batch로 전송한 결과이고, 연두색은 한번에 1개씩 batch로 전송한 결과이다.
 
 > 중간에 한번씩 튀는 이유?
 
 Consumer 성능
-![](assets/kafka-ea4e8.png)
+![](assets/kafka-f6599.png)
 
 ## Topic과 Partition
 
 Kafka의 topic은 partition이라는 단위로 쪼개어져 클러스터의 각 서버들에 분산되어 저장되고, 고가용성을 위하여 복제(replication) 설정을 할 경우 이 또한 partition 단위로 각 서버들에 분산되어 복제되고 장애가 발생하면 partition 단위로 fail over가 수행된다.
 
-![](assets/kafka-59058.png)
+![](assets/kafka-ad0e9.png)
 
 위의 그림은 하나의 topic이 3개의 partition에 분산되어 순차적으로 저장되는 모습을 보여주고 있다.
 
 각 partition은 0부터 1씩 증가하는 offset 값을 메시지에 부여하는데 이 값은 각 partition내에서 메시지를 식별하는 ID로 사용된다. Offset 값은 partition마다 별도로 관리되므로 topic내에서 메시지를 식별할 때는 partition 번호와 offset 값을 함께 사용한다.
 
 ### Partition 분산
-![](assets/kafka-a4bc9.png)
+![](assets/kafka-a92b8.png)
 
 위의 그림에서는 3개의 broker로 이루어진 클러스터에서 하나의 topic이 3개의 partition P0, P1, P2로 분산되어 저장되어 있다.
 
@@ -74,7 +74,7 @@ Producer가 메시지를 실제로 어떤 partition으로 전송할지는 사용
 ### Partition 복제
 Kafka에서는 고가용성을 위하여 각 partition을 복제하여 클러스터에 분산시킬 수 있다. 아래의 그림은 해당 topic의 replication factor를 3으로 설정한 상태의 클러스터이다. 각 partition들은 3개의 replica를 가지며 각 replica는 R0, R1, R2로 표시되어 있다.
 
-![](assets/kafka-9432f.png)
+![](assets/kafka-99eda.png)
 
 Replication factor를 N으로 설정할 경우 N개의 replica는 1개의 leader와 N-1개의 follower로 구성된다. 위의 그림에서는 각 partition마다 하나의 leader(붉은색)가 존재하며 2개의 follower(푸른색)가 존재한다.
 
@@ -93,7 +93,7 @@ Kafka에서는 consumer group이라는 개념을 도입하여 두가지 모델�
 
 Consumer group을 구성하는 consumer의 수가 partition의 수보다 작으면 하나의 consumer가 여러 개의 partition을 소유하게 되고, 반대로 consumer의 수가 partition의 수보다 많으면 여분의 consumer는 메시지를 처리하지 않게되므로 partition 개수와 consumer 수의 적절한 설정이 필요하다.
 
-![](assets/kafka-f8b26.png)
+![](assets/kafka-d50d9.png)
 
 ## 파일 시스템을 활용한 고성능 디자인
 
@@ -101,7 +101,7 @@ Kafka는 기존 메시징 시스템과는 달리 메시지를 메모리대신 �
 
 기존 메시징 시스템에서는 파일 시스템은 메시지의 영속성을 위해서 성능 저하를 감수하면서도 어쩔 수 없이 사용해야하는 애물단지 같은 존재였다. 그러나 Kafka는 이런 편견을 깨고 파일 시스템을 메시지의 주 저장소로 사용하면서도 기존의 메시징 시스템보다 뛰어난 성능을 보여준다.
 
-![](assets/kafka-1c9ad.png)
+![](assets/kafka-488d9.png)
 
 일반적으로 하드디스크는 메모리보다 수백-수천 배 이상 느리다. 그러나 특정 조건에서는 메모리보다 10배 이내로 느리거나 심지어는 빠를 수도 있다. ACM Queue에 게재된 [The Pathologies of Big Data](http://queue.acm.org/detail.cfm?id=1563874)라는 글에 따르면 하드디스크의 순차적 읽기 성능은 메모리에 대한 랜덤 읽기 성능보다 뛰어나며 메모리의 순차적 읽기 성능보다 7배 정도 느리다. (물론 하드디스크의 랜덤 읽기 성능은 메모리의 랜덤 읽기 성능보다 10만배나 느리다.)
 
@@ -122,13 +122,13 @@ Kafka의 메시지는 하드디스크로부터 순차적으로 읽혀지기 때�
 
 일반적으로 파일 시스템에 저장된 데이터를 네트워크로 전송할 땐 아래와 같이 커널모드와 유저모드 간의 데이터 복사가 발생하게 된다.
 
-![](assets/kafka-1398c.png)
+![](assets/kafka-ddfa3.png)
 
 유저모드로 카피된 데이터를 어플리케이션에서 처리한 뒤 처리된 데이터를 네트워크로 전송한다면 위의 그림과 같이 커널모드와 유저모드 간의 데이터 복사는 당연히 필요하다. 그러나 어플리케이션에서의 별도 처리 없이 파일 시스템에 저장된 데이터 그대로 네트워크로 전송만 한다면 커널모드와 유저모드 간의 데이터 복사는 불필요한 것이 된다.
 
 Zero-copy 기법을 사용하면 위에서 언급한 커널모드와 유저모드 간의 불필요한 데이터 복사를 피할 수 있다. 이 기법을 사용하면 아래와 같이 파일 시스템의 데이터가 유저모드를 거치지 않고 곧바로 네트워크로 전송된다. 벤치마크 결과에 따르면 zero-copy를 사용한 경우가 그렇지 않은 경우보다 전송 속도가 2-4배 빠른 것으로 나타났다.
 
-![](assets/kafka-6bb33.png)
+![](assets/kafka-201d8.png)
 
 ## Reference
 http://epicdevs.com/17
